@@ -35,6 +35,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 
@@ -44,6 +47,7 @@ public class ProductActivity extends AppCompatActivity {
 
     FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    StorageReference storageReference = FirebaseStorage.getInstance().getReference();
 
     ViewPager imgSlider;
     TextView tvKategori,editBaslik,editFiyat,editAciklama;
@@ -217,9 +221,37 @@ public class ProductActivity extends AppCompatActivity {
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
 
-
-
+        deleteOnStorage();
     }
 
+    private void deleteOnStorage() {
+        StorageReference refOfAdvertisement = storageReference.child(firebaseUser.getEmail()).child("advertisements").child(advertisement.getId());
+
+        refOfAdvertisement.listAll()
+                .addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                    @Override
+                    public void onSuccess(ListResult listResult) {
+                        for (StorageReference item : listResult.getItems()) {
+                            item.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    Log.d(TAG, "onFailure: İlan resimleri başarıyla silindi.");
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.d(TAG, "onFailure: İlan resimlerini silmede hata!");
+                                }
+                            });
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: Resimleri listelemede hata! " + e.getMessage());
+                    }
+                });
+    }
 
 }
